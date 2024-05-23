@@ -1,0 +1,60 @@
+```{r}
+library(lubridate)
+
+# Filter to include only data from 2022 onwards and exclude NA dates
+dataset_cleaned <- dataset_cleaned %>%
+  filter(!is.na(consent_date) & year(consent_date) >= 2022)
+
+
+
+# Enrollment Trends by Month for 2022
+dataset_cleaned$YearMonth <- format(dataset_cleaned$consent_date, "%Y-%m")
+enrollment_trends_2022 <- as.data.frame(table(dataset_cleaned$YearMonth))
+
+ggplot(enrollment_trends_2022, aes(x = Var1, y = Freq, group = 1)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Enrollment Trends Over Time (2022)", x = "Year-Month", y = "Frequency") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r}
+library(ggplot2)
+library(sf)
+library(rnaturalearth)
+
+# Load detailed Uganda map with administrative boundaries
+uganda_map <- ne_countries(country = "Uganda", scale = "medium", returnclass = "sf")
+uganda_districts <- ne_states(country = "Uganda", returnclass = "sf")
+
+# Create the map
+ggplot() +
+  geom_sf(data = uganda_districts, fill = "lightgray", color = "white") +  # Uganda districts
+  geom_sf(data = uganda_map, fill = NA, color = "black", lwd = 0.5) +  # Uganda outline
+  geom_point(data = new_hd, aes(x = Longitude, y = Latitude, size = Frequency), color = "orange") +
+  geom_text(data = new_hd, aes(x = Longitude, y = Latitude, label = Hospital), size = 2, nudge_y = -0.10, nudge_x = 0.2) + # Adjust size and nudge_y
+  geom_text(data = new_hd, aes(x = Longitude, y = Latitude, label = Frequency), size = 2, nudge_y = 0.3, color = "blue") + # Add counts
+  labs(title = "Hospital Distribution and Frequency in Uganda", x = "Longitude", y = "Latitude") +
+  scale_size_continuous(name = "Frequency") +  # Adjust point sizes
+  theme_minimal() +
+  theme(legend.position = "right", 
+        legend.title.align = 0.5,
+        text = element_text(size = 12))  # Adjust theme and text size for publication quality
+
+# Save the plot
+ggsave("Uganda_Hospital_Map.png", width = 10, height = 8, dpi = 300)
+
+
+```
+
+
+```{r}
+write.csv(new_hd, "site-frequencies.csv")
+```
+
+```{r}
+write.csv(enrollment_trends_2022, "enrollment_trends.csv")
+```
+
